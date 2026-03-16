@@ -1,0 +1,483 @@
+{
+  "openapi" : "3.0.3",
+  "info" : {
+    "description" : "Сервис транскрипции YouTube видео с помощью ИИ",
+    "title" : "TranscriberVCA",
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8080"
+  } ],
+  "tags" : [ {
+    "description" : "Регистрация и авторизация",
+    "name" : "auth"
+  }, {
+    "description" : "Транскрипция видео",
+    "name" : "transcriptions"
+  }, {
+    "description" : "История транскрипций",
+    "name" : "history"
+  } ],
+  "paths" : {
+    "/auth/register" : {
+      "post" : {
+        "operationId" : "register",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description" : "Пользователь создан"
+          },
+          "409" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Пользователь уже существует"
+          }
+        },
+        "summary" : "Регистрация нового пользователя",
+        "tags" : [ "auth" ]
+      }
+    },
+    "/auth/login" : {
+      "post" : {
+        "operationId" : "login",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description" : "Успешная авторизация"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Неверные учётные данные"
+          }
+        },
+        "summary" : "Авторизация",
+        "tags" : [ "auth" ]
+      }
+    },
+    "/transcribe" : {
+      "post" : {
+        "operationId" : "transcribe",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TranscribeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TranscriptionResult"
+                }
+              }
+            },
+            "description" : "Транскрипция запущена"
+          },
+          "400" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Невалидная ссылка"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Не авторизован"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Запросить транскрипцию YouTube видео",
+        "tags" : [ "transcriptions" ]
+      }
+    },
+    "/transcriptions/{transcription_id}" : {
+      "get" : {
+        "operationId" : "getTranscription",
+        "parameters" : [ {
+          "explode" : false,
+          "in" : "path",
+          "name" : "transcription_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          },
+          "style" : "simple"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TranscriptionResult"
+                }
+              }
+            },
+            "description" : "Результат транскрипции"
+          },
+          "404" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Не найдено"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Не авторизован"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "Получить результат транскрипции",
+        "tags" : [ "transcriptions" ]
+      }
+    },
+    "/history" : {
+      "get" : {
+        "operationId" : "getHistory",
+        "parameters" : [ {
+          "description" : "Количество записей",
+          "explode" : true,
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "type" : "integer"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Смещение",
+          "explode" : true,
+          "in" : "query",
+          "name" : "offset",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "type" : "integer"
+          },
+          "style" : "form"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/HistoryItem"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Список транскрипций пользователя"
+          },
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Error"
+                }
+              }
+            },
+            "description" : "Не авторизован"
+          }
+        },
+        "security" : [ {
+          "BearerAuth" : [ ]
+        } ],
+        "summary" : "История транскрипций пользователя",
+        "tags" : [ "history" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "RegisterRequest" : {
+        "example" : {
+          "password" : "parol123",
+          "username" : "krugarrr"
+        },
+        "properties" : {
+          "username" : {
+            "example" : "krugarrr",
+            "minLength" : 3,
+            "type" : "string"
+          },
+          "password" : {
+            "example" : "parol123",
+            "minLength" : 6,
+            "type" : "string"
+          }
+        },
+        "required" : [ "password", "username" ],
+        "type" : "object"
+      },
+      "LoginRequest" : {
+        "example" : {
+          "password" : "parol123",
+          "username" : "krugarrr"
+        },
+        "properties" : {
+          "username" : {
+            "example" : "krugarrr",
+            "type" : "string"
+          },
+          "password" : {
+            "example" : "parol123",
+            "type" : "string"
+          }
+        },
+        "required" : [ "password", "username" ],
+        "type" : "object"
+      },
+      "AuthResponse" : {
+        "example" : {
+          "token" : "token",
+          "username" : "krugarrr"
+        },
+        "properties" : {
+          "token" : {
+            "description" : "JWT токен",
+            "type" : "string"
+          },
+          "username" : {
+            "example" : "krugarrr",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TranscribeRequest" : {
+        "example" : {
+          "format" : "txt",
+          "model" : "base",
+          "youtube_url" : "https://www.youtube.com/watch?v=aArtkKEDaps"
+        },
+        "properties" : {
+          "youtube_url" : {
+            "description" : "Ссылка навидео",
+            "example" : "https://www.youtube.com/watch?v=aArtkKEDaps",
+            "format" : "uri",
+            "type" : "string"
+          },
+          "model" : {
+            "default" : "base",
+            "description" : "Сложность модели транскрипции. Чем она сложнее, тем выше качество, но и дольше ожидание.",
+            "enum" : [ "mini", "base", "small", "medium", "large" ],
+            "type" : "string"
+          },
+          "format" : {
+            "default" : "txt",
+            "description" : "Формат результата",
+            "enum" : [ "txt", "json" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "youtube_url" ],
+        "type" : "object"
+      },
+      "TranscriptionResult" : {
+        "example" : {
+          "result" : "TranscriptionResult_result",
+          "format" : "txt",
+          "created_at" : "2000-01-23T04:56:07.000+00:00",
+          "model" : "base",
+          "id" : "228322a",
+          "youtube_url" : "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "status" : "completed"
+        },
+        "properties" : {
+          "id" : {
+            "example" : "228322a",
+            "type" : "string"
+          },
+          "youtube_url" : {
+            "example" : "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            "type" : "string"
+          },
+          "model" : {
+            "enum" : [ "mini", "base", "small", "medium", "large" ],
+            "example" : "base",
+            "type" : "string"
+          },
+          "format" : {
+            "enum" : [ "txt", "json" ],
+            "example" : "txt",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "extracting", "transcribing", "completed", "error" ],
+            "example" : "completed",
+            "type" : "string"
+          },
+          "result" : {
+            "$ref" : "#/components/schemas/TranscriptionResult_result"
+          },
+          "created_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Segment" : {
+        "properties" : {
+          "start" : {
+            "example" : 0.0,
+            "format" : "float",
+            "type" : "number"
+          },
+          "end" : {
+            "example" : 5.2,
+            "format" : "float",
+            "type" : "number"
+          },
+          "text" : {
+            "example" : "Привет, добро пожаловать",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "HistoryItem" : {
+        "example" : {
+          "format" : "format",
+          "created_at" : "2000-01-23T04:56:07.000+00:00",
+          "model" : "model",
+          "id" : "id",
+          "youtube_url" : "youtube_url",
+          "status" : "status"
+        },
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "youtube_url" : {
+            "type" : "string"
+          },
+          "model" : {
+            "type" : "string"
+          },
+          "format" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "created_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Error" : {
+        "example" : {
+          "detail" : "detail"
+        },
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TranscriptionResult_result_oneOf" : {
+        "properties" : {
+          "segments" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Segment"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "TranscriptionResult_result" : {
+        "description" : "Текст или json с таймкодами",
+        "oneOf" : [ {
+          "type" : "string"
+        }, {
+          "$ref" : "#/components/schemas/TranscriptionResult_result_oneOf"
+        } ]
+      }
+    },
+    "securitySchemes" : {
+      "BearerAuth" : {
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer",
+        "type" : "http"
+      }
+    }
+  }
+}
