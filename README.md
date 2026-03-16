@@ -48,3 +48,4 @@ cd src/TranscriberVCA.Generated
 docker build -t transcribervca.generated .
 docker run -p 5000:8080 transcribervca.generated
 ```
+<img width="614" height="532" alt="image" src="https://github.com/user-attachments/assets/10d95430-1196-4e76-b0f6-6fa22d1aec3e" />
