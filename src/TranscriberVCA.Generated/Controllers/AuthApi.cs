@@ -9,14 +9,8 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json;
 using TranscriberVCA.Generated.Attributes;
 using TranscriberVCA.Generated.Models;
 using TranscriberVCA.Services;
@@ -54,10 +48,14 @@ namespace TranscriberVCA.Generated.Controllers
             try
             {
                 var response = _authService.Login(loginRequest);
+                MetricsService.LoginsTotal.WithLabels("success").Inc();
+                MetricsService.HttpRequestsTotal.WithLabels("POST", "/auth/login", "200").Inc();
                 return Ok(response);
             }
             catch (UnauthorizedAccessException)
             {
+                MetricsService.LoginsTotal.WithLabels("failure").Inc();
+                MetricsService.HttpRequestsTotal.WithLabels("POST", "/auth/login", "401").Inc();
                 return Unauthorized(new Error { Detail = "Invalid credentials" });
             }
         }

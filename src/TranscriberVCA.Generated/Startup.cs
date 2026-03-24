@@ -21,6 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using Prometheus;
 using TranscriberVCA.Generated.Authentication;
 using TranscriberVCA.Generated.Filters;
 using TranscriberVCA.Generated.OpenApi;
@@ -140,9 +141,12 @@ namespace TranscriberVCA.Generated
                     //TODO: Or alternatively use the original OpenAPI contract that's included in the static files
                     // c.SwaggerEndpoint("/openapi-original.json", "TranscriberVCA Original");
                 });
+       
+            app.UseMetricServer();
+            app.UseHttpMetrics();
+            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseRouting();
             app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllers();

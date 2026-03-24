@@ -55,7 +55,7 @@ public class AuthService : IAuthService
             }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
-            return jwtToken.Claims.First(x => x.Type == ClaimTypes.NameIdentifier).Value;
+            return jwtToken.Claims.First(x => x.Type == "nameid" || x.Type == ClaimTypes.NameIdentifier).Value;
         }
         catch
         {
