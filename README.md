@@ -89,27 +89,13 @@ cd src/TranscriberVCA.Generated
 docker-compose up -d
 ```
 
-### Grafana дашборд
- http://localhost:3000 (логин `admin` / `admin`)
-Дашборд:
-
-1. Transcription Rate - график транскрипций во времени
-2. Total Transcriptions - общее количество транскрипций
-3. In Progress - количество транскрипций в обработке
-4. Completed vs Failed - успешные и неудачные транскрипции
-5. Transcription Duration - среднее время обработки
-6. Logins - успешные и неудачные попытки входа
-
-<img width="685" height="209" alt="image" src="https://github.com/user-attachments/assets/eeb71144-c274-403e-a4a4-b17a616d9572" />
-
-<img width="601" height="427" alt="image" src="https://github.com/user-attachments/assets/f5d8704e-b333-46e8-a824-75c7dd72c723" />
-
-<img width="475" height="147" alt="image" src="https://github.com/user-attachments/assets/a826bd5a-8338-4000-974b-5cd2ebc3a6cf" />
-
-<img width="694" height="477" alt="image" src="https://github.com/user-attachments/assets/f323df54-9b03-406e-b946-e716b7dc59f5" />
-
-<img width="939" height="817" alt="image" src="https://github.com/user-attachments/assets/1768a4d7-a1c5-4a33-9b29-62e4e424587d" />
-
+### Дашборд метрик
+1. Transcription Rate - график транскрипций во времени - `rate(transcriber_transcriptions_started_total[1m])`
+2. Total Transcriptions - общее количество транскрипций - `sum(transcriber_transcriptions_started_total)`
+3. In Progress - количество транскрипций в обработке - `transcriber_transcriptions_in_progress`
+4. Completed vs Failed - успешные и неудачные транскрипции - `sum(transcriber_transcriptions_completed_total)` и `sum(transcriber_transcriptions_completed_total)`
+5. Transcription Duration - среднее время обработки - `histogram_quantile(0.95, rate(transcriber_transcription_duration_seconds_bucket[5m]))`
+6. Logins - успешные и неудачные попытки входа - `transcriber_logins_total{status="success"}` и `transcriber_logins_total{status="failureч"}`
 
 ### Логирование
 Использую Serilog для логирования. Логи отправляются в консоль и в Grafana Loki
@@ -138,10 +124,13 @@ docker-compose up -d
 
 <img width="1280" height="654" alt="image" src="https://github.com/user-attachments/assets/563ac7be-85d9-4443-8155-75006ea02758" />
 
-### Dashboard в Graphana с Loki
-<img width="739" height="241" alt="image" src="https://github.com/user-attachments/assets/5f712b93-874b-4683-b0cd-8da6dad3f74a" />
-
-<img width="1089" height="514" alt="image" src="https://github.com/user-attachments/assets/85112b13-d28e-42ea-96b4-a6f3607b227d" />
+### Дашборд логов
+- Application logs — все логи приложения - `{app="transcriber-vca"}`
+- Log rate by level — количество логов по уровням - `sum by (level) (count_over_time({app="transcriber-vca"} | logfmt [1m]))`
+- Errors & warnings — проблемные логи - `{app="transcriber-vca"} |= "failed" or |= "Error" or |= "Warning" or |= "Failed"`
+- Failed logins per minute — мониторинг брутфорса - `count_over_time({app="transcriber-vca"} |= "Login failed" [1m])`
+- Transcription lifecycle — жизненный цикл транскрипций - `{app="transcriber-vca"} |= "Transcription"`
+- User registrations per minute — регистрации - `count_over_time({app="transcriber-vca"} |= "registered successfully" [1m])`
 
 ### Доступ к сервисам
 
