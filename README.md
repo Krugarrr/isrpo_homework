@@ -82,7 +82,7 @@ http://localhost:8080/metrics
 
 ### Запуск стека мониторинга
 
-Стек включает VictoriaMetrics (хранение метрик), vmagent (сбор метрик) и Grafana
+Стек включает VictoriaMetrics (хранение метрик), vmagent (сбор метрик), Loki (логи), Grafana и VictoriaLogs (как альтернативное хранилище логов)
 
 ```bash
 cd src/TranscriberVCA.Generated
