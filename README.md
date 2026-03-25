@@ -89,23 +89,33 @@ cd src/TranscriberVCA.Generated
 docker-compose up -d
 ```
 
-### Grafana дашборд
- http://localhost:3000 (логин `admin` / `admin`)
-Дашборд:
+### Дашборд метрик
+1. Transcription Rate - график транскрипций во времени - `rate(transcriber_transcriptions_started_total[1m])`
+2. Total Transcriptions - общее количество транскрипций - `sum(transcriber_transcriptions_started_total)`
+3. In Progress - количество транскрипций в обработке - `transcriber_transcriptions_in_progress`
+4. Completed vs Failed - успешные и неудачные транскрипции - `sum(transcriber_transcriptions_completed_total)` и `sum(transcriber_transcriptions_completed_total)`
+5. Transcription Duration - среднее время обработки - `histogram_quantile(0.95, rate(transcriber_transcription_duration_seconds_bucket[5m]))`
+6. Logins - успешные и неудачные попытки входа - `transcriber_logins_total{status="success"}` и `transcriber_logins_total{status="failureч"}`
 
-1. Transcription Rate - график транскрипций во времени
-2. Total Transcriptions - общее количество транскрипций
-3. In Progress - количество транскрипций в обработке
-4. Completed vs Failed - успешные и неудачные транскрипции
-5. Transcription Duration - среднее время обработки
-6. Logins - успешные и неудачные попытки входа
+### Preview
+<img width="1064" height="350" alt="image" src="https://github.com/user-attachments/assets/0475e31d-dd3f-44f0-9999-0c588990fdb9" />
 
-<img width="685" height="209" alt="image" src="https://github.com/user-attachments/assets/eeb71144-c274-403e-a4a4-b17a616d9572" />
+### PromQL query details
+<img width="353" height="131" alt="image" src="https://github.com/user-attachments/assets/5902cbf1-483a-4805-86ac-fdc4bb2e1420" />
 
-<img width="601" height="427" alt="image" src="https://github.com/user-attachments/assets/f5d8704e-b333-46e8-a824-75c7dd72c723" />
+---
 
-<img width="475" height="147" alt="image" src="https://github.com/user-attachments/assets/a826bd5a-8338-4000-974b-5cd2ebc3a6cf" />
+<img width="259" height="176" alt="image" src="https://github.com/user-attachments/assets/2b577c88-0ee6-4cc8-a951-547efed23798" />
 
-<img width="694" height="477" alt="image" src="https://github.com/user-attachments/assets/f323df54-9b03-406e-b946-e716b7dc59f5" />
+
+### Доступ к сервисам
+
+| Сервис | URL                           | Описание |
+|--------|-------------------------------|----------|
+| **Приложение** | http://localhost:8080         | API сервер |
+| **Метрики** | http://localhost:8080/metrics | Prometheus-метрики |
+| **VictoriaMetrics** | http://localhost:8428/vmui    | UI для запросов к метрикам |
+| **vmagent** | http://localhost:8429/targets | Статус сбора метрик |
+| **Grafana** | http://localhost:3000         | Дашборды и логи (логин: `admin` / `admin`) |
 
 
