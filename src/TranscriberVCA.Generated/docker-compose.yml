@@ -21,12 +21,34 @@ services:
       - "--promscrape.config=/etc/prometheus/prometheus.yml"
       - "--remoteWrite.url=http://victoriametrics:8428/api/v1/write"
 
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:latest
+    ports:
+      - "9428:9428"
+    volumes:
+      - vldata:/vlogs
+    command:
+      - "--storageDataPath=/vlogs"
+      - "--httpListenAddr=:9428"
+
   grafana:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
+    volumes:
+      - grafanadata:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=https://github.com/VictoriaMetrics/victorialogs-datasource/releases/download/v0.14.0/victoriametrics-logs-datasource-v0.14.0.zip;victoriametrics-logs-datasource
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=victoriametrics-logs-datasource
 
 volumes:
   vmdata:
+  vldata:
+  grafanadata:

@@ -22,10 +22,12 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Prometheus;
+using Serilog;
 using TranscriberVCA.Generated.Authentication;
 using TranscriberVCA.Generated.Filters;
 using TranscriberVCA.Generated.OpenApi;
 using TranscriberVCA.Generated.Formatters;
+using TranscriberVCA.Generated.Services;
 using TranscriberVCA.Services;
 
 namespace TranscriberVCA.Generated
@@ -145,6 +147,7 @@ namespace TranscriberVCA.Generated
             app.UseMetricServer();
             app.UseHttpMetrics();
             app.UseRouting();
+            app.UseSerilogRequestLogging();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
