@@ -108,6 +108,9 @@ docker-compose up -d
 
 <img width="694" height="477" alt="image" src="https://github.com/user-attachments/assets/f323df54-9b03-406e-b946-e716b7dc59f5" />
 
+<img width="939" height="817" alt="image" src="https://github.com/user-attachments/assets/1768a4d7-a1c5-4a33-9b29-62e4e424587d" />
+
+
 ### Логирование
 Использую Serilog для логирования. Логи отправляются в консоль и в Grafana Loki
 
@@ -125,7 +128,20 @@ docker-compose up -d
 | Несанкционированный доступ | Warning | User testuser attempted to access transcription without permission |
 | HTTP запросы | Information | Автоматически через Serilog middleware |
 
+### Логирование в консоли
+<img width="1280" height="243" alt="image" src="https://github.com/user-attachments/assets/ec6b0768-6ad8-4910-a4d4-0db1df32c2b0" />
 
+### Датасурс Loki в Graphana
+<img width="1280" height="608" alt="image" src="https://github.com/user-attachments/assets/0ae15a15-a3db-490f-aa83-fd8bff8bc5c9" />
+
+<img width="786" height="240" alt="image" src="https://github.com/user-attachments/assets/8b7c8af8-8d58-481e-b332-0bb41b977de3" />
+
+<img width="1280" height="654" alt="image" src="https://github.com/user-attachments/assets/563ac7be-85d9-4443-8155-75006ea02758" />
+
+### Dashboard в Graphana с Loki
+<img width="739" height="241" alt="image" src="https://github.com/user-attachments/assets/5f712b93-874b-4683-b0cd-8da6dad3f74a" />
+
+<img width="1089" height="514" alt="image" src="https://github.com/user-attachments/assets/85112b13-d28e-42ea-96b4-a6f3607b227d" />
 
 ### Доступ к сервисам
 
