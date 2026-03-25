@@ -88,6 +88,7 @@ http://localhost:8080/metrics
 cd src/TranscriberVCA.Generated
 docker-compose up -d
 ```
+# Метрики
 
 ### Дашборд метрик
 1. Transcription Rate - график транскрипций во времени - `rate(transcriber_transcriptions_started_total[1m])`
@@ -97,15 +98,17 @@ docker-compose up -d
 5. Transcription Duration - среднее время обработки - `histogram_quantile(0.95, rate(transcriber_transcription_duration_seconds_bucket[5m]))`
 6. Logins - успешные и неудачные попытки входа - `transcriber_logins_total{status="success"}` и `transcriber_logins_total{status="failureч"}`
 
-<img width="685" height="209" alt="image" src="https://github.com/user-attachments/assets/eeb71144-c274-403e-a4a4-b17a616d9572" />
+### Preview
+<img width="1064" height="350" alt="image" src="https://github.com/user-attachments/assets/0475e31d-dd3f-44f0-9999-0c588990fdb9" />
 
-<img width="601" height="427" alt="image" src="https://github.com/user-attachments/assets/f5d8704e-b333-46e8-a824-75c7dd72c723" />
+### PromQL query details
+<img width="353" height="131" alt="image" src="https://github.com/user-attachments/assets/5902cbf1-483a-4805-86ac-fdc4bb2e1420" />
 
-<img width="475" height="147" alt="image" src="https://github.com/user-attachments/assets/a826bd5a-8338-4000-974b-5cd2ebc3a6cf" />
+---
 
-<img width="694" height="477" alt="image" src="https://github.com/user-attachments/assets/f323df54-9b03-406e-b946-e716b7dc59f5" />
+<img width="259" height="176" alt="image" src="https://github.com/user-attachments/assets/2b577c88-0ee6-4cc8-a951-547efed23798" />
 
-### Логирование
+# Логирование
 Использую Serilog для логирования. Логи отправляются в консоль и в Grafana Loki
 
 ### Что логируется
@@ -122,6 +125,20 @@ docker-compose up -d
 | Несанкционированный доступ | Warning | User testuser attempted to access transcription without permission |
 | HTTP запросы | Information | Автоматически через Serilog middleware |
 
+### Логирование в консоли
+<img width="1280" height="243" alt="image" src="https://github.com/user-attachments/assets/ec6b0768-6ad8-4910-a4d4-0db1df32c2b0" />
+
+### Loki as Datasource
+<img width="1280" height="608" alt="image" src="https://github.com/user-attachments/assets/0ae15a15-a3db-490f-aa83-fd8bff8bc5c9" />
+
+### Datasource query details
+<img width="786" height="240" alt="image" src="https://github.com/user-attachments/assets/8b7c8af8-8d58-481e-b332-0bb41b977de3" />
+
+---
+
+<img width="1280" height="654" alt="image" src="https://github.com/user-attachments/assets/563ac7be-85d9-4443-8155-75006ea02758" />
+
+
 ### Дашборд логов
 - Application logs — все логи приложения - `{app="transcriber-vca"}`
 - Log rate by level — количество логов по уровням - `sum by (level) (count_over_time({app="transcriber-vca"} | logfmt [1m]))`
@@ -130,6 +147,33 @@ docker-compose up -d
 - Transcription lifecycle — жизненный цикл транскрипций - `{app="transcriber-vca"} |= "Transcription"`
 - User registrations per minute — регистрации - `count_over_time({app="transcriber-vca"} |= "registered successfully" [1m])`
 
+### Preview
+<img width="1069" height="375" alt="image" src="https://github.com/user-attachments/assets/b4afe193-b340-44e4-9eb6-4ac71f446120" />
+
+
+### Query details
+<img width="228" height="153" alt="image" src="https://github.com/user-attachments/assets/b78be3b4-a789-4e22-9ec5-389ef60e6a6f" />
+
+---
+
+<img width="292" height="179" alt="image" src="https://github.com/user-attachments/assets/d21a9fad-3d84-4546-90ed-a87a3edb7fb2" />
+
+# Трейсинг
+Приложение экспортирует трейсы через OTLP gRPC на порт 4317
+
+### Tempo as Datasource
+
+<img width="1037" height="435" alt="image" src="https://github.com/user-attachments/assets/2ab6d046-9b17-4a3d-bba8-cdd07219d01e" />
+
+### Datasource TraceQL query details
+
+<img width="184" height="104" alt="image" src="https://github.com/user-attachments/assets/11259a06-f4c5-46b6-a3cf-c552178ba712" />
+
+### Tempo as Datasource details
+
+<img width="540" height="368" alt="image" src="https://github.com/user-attachments/assets/a97966d3-00f1-4135-be4b-e70e07b669d1" />
+
+
 ### Трейсы дашборд
 - Recent Traces - последние трейсы - `{resource.service.name = "transcriber-vca"}`
 - Error Traces - ошибочные трейсы - `{resource.service.name = "transcriber-vca" && status = error}`
@@ -137,6 +181,17 @@ docker-compose up -d
 - Slow Requests (>1000ms) — медленные запросы - `{resource.service.name = "transcriber-vca" && duration > 1000ms}`
 - Transcription Traces - трейсы транскрипций - `{span.transcription.id != ""}`
 - Failed Login Traces - неудачные логины - `{span.auth.result = "invalid_password" || span.auth.result = "user_not_found"}`
+
+### Preview
+<img width="1070" height="415" alt="image" src="https://github.com/user-attachments/assets/b8cfb7ac-453a-4535-8a66-c78fbee88358" />
+
+### TraceQL query details
+
+<img width="290" height="168" alt="image" src="https://github.com/user-attachments/assets/14326052-1145-4be3-bfad-745213609c58" />
+
+---
+
+<img width="325" height="188" alt="image" src="https://github.com/user-attachments/assets/ea1c6a1c-020d-4b25-ab6c-5f4b978762f6" />
 
 ### Доступ к сервисам
 
