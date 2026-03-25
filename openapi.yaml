@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: TranscriberVCA
+  description: Сервис транскрипции YouTube видео с помощью ИИ
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: auth
+    description: Регистрация и авторизация
+  - name: transcriptions
+    description: Транскрипция видео
+  - name: history
+    description: История транскрипций
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          example: "krugarrr"
+        password:
+          type: string
+          minLength: 6
+          example: "parol123"
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: "krugarrr"
+        password:
+          type: string
+          example: "parol123"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен
+        username:
+          type: string
+          example: "krugarrr"
+
+    TranscribeRequest:
+      type: object
+      required: [youtube_url]
+      properties:
+        youtube_url:
+          type: string
+          format: uri
+          description: Ссылка навидео
+          example: "https://www.youtube.com/watch?v=aArtkKEDaps"
+        model:
+          type: string
+          enum: [mini, base, small, medium, large]
+          default: base
+          description: Сложность модели транскрипции. Чем она сложнее, тем выше качество, но и дольше ожидание.
+        format:
+          type: string
+          enum: [txt, json]
+          default: txt
+          description: Формат результата
+
+    TranscriptionResult:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "228322a"
+        youtube_url:
+          type: string
+          example: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        model:
+          type: string
+          enum: [mini, base, small, medium, large]
+          example: "base"
+        format:
+          type: string
+          enum: [txt, json]
+          example: "txt"
+        status:
+          type: string
+          enum: [extracting, transcribing, completed, error]
+          example: "completed"
+        result:
+          description: Текст или json с таймкодами
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                segments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Segment'
+        created_at:
+          type: string
+          format: date-time
+
+    Segment:
+      type: object
+      properties:
+        start:
+          type: number
+          format: float
+          example: 0.0
+        end:
+          type: number
+          format: float
+          example: 5.2
+        text:
+          type: string
+          example: "Привет, добро пожаловать"
+
+    HistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        youtube_url:
+          type: string
+        model:
+          type: string
+        format:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация нового пользователя
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Пользователь уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Авторизация
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные учётные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transcribe:
+    post:
+      tags: [transcriptions]
+      summary: Запросить транскрипцию YouTube видео
+      operationId: transcribe
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscribeRequest'
+      responses:
+        '202':
+          description: Транскрипция запущена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResult'
+        '400':
+          description: Невалидная ссылка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /transcriptions/{transcription_id}:
+    get:
+      tags: [transcriptions]
+      summary: Получить результат транскрипции
+      operationId: getTranscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: transcription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Результат транскрипции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptionResult'
+        '404':
+          description: Не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /history:
+    get:
+      tags: [history]
+      summary: История транскрипций пользователя
+      operationId: getHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: Количество записей
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Смещение
+      responses:
+        '200':
+          description: Список транскрипций пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryItem'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
