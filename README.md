@@ -82,23 +82,20 @@ http://localhost:8080/metrics
 
 ### Запуск стека мониторинга
 
-Стек включает VictoriaMetrics (хранение метрик), vmagent (сбор метрик), Loki (логи), Grafana и VictoriaLogs (как альтернативное хранилище логов)
+Стек включает VictoriaMetrics (хранение метрик), vmagent (сбор метрик), Loki (логи), Grafana VictoriaLogs (как альтернативное хранилище логов), Grafana Tempo (хранилище трейсов) и OpenTelemetry (единый стандарт сбора метрик)
 
 ```bash
 cd src/TranscriberVCA.Generated
 docker-compose up -d
 ```
 
-### Grafana дашборд
- http://localhost:3000 (логин `admin` / `admin`)
-Дашборд:
-
-1. Transcription Rate - график транскрипций во времени
-2. Total Transcriptions - общее количество транскрипций
-3. In Progress - количество транскрипций в обработке
-4. Completed vs Failed - успешные и неудачные транскрипции
-5. Transcription Duration - среднее время обработки
-6. Logins - успешные и неудачные попытки входа
+### Дашборд метрик
+1. Transcription Rate - график транскрипций во времени - `rate(transcriber_transcriptions_started_total[1m])`
+2. Total Transcriptions - общее количество транскрипций - `sum(transcriber_transcriptions_started_total)`
+3. In Progress - количество транскрипций в обработке - `transcriber_transcriptions_in_progress`
+4. Completed vs Failed - успешные и неудачные транскрипции - `sum(transcriber_transcriptions_completed_total)` и `sum(transcriber_transcriptions_completed_total)`
+5. Transcription Duration - среднее время обработки - `histogram_quantile(0.95, rate(transcriber_transcription_duration_seconds_bucket[5m]))`
+6. Logins - успешные и неудачные попытки входа - `transcriber_logins_total{status="success"}` и `transcriber_logins_total{status="failureч"}`
 
 <img width="685" height="209" alt="image" src="https://github.com/user-attachments/assets/eeb71144-c274-403e-a4a4-b17a616d9572" />
 
@@ -125,7 +122,21 @@ docker-compose up -d
 | Несанкционированный доступ | Warning | User testuser attempted to access transcription without permission |
 | HTTP запросы | Information | Автоматически через Serilog middleware |
 
+### Дашборд логов
+- Application logs — все логи приложения - `{app="transcriber-vca"}`
+- Log rate by level — количество логов по уровням - `sum by (level) (count_over_time({app="transcriber-vca"} | logfmt [1m]))`
+- Errors & warnings — проблемные логи - `{app="transcriber-vca"} |= "failed" or |= "Error" or |= "Warning" or |= "Failed"`
+- Failed logins per minute — мониторинг брутфорса - `count_over_time({app="transcriber-vca"} |= "Login failed" [1m])`
+- Transcription lifecycle — жизненный цикл транскрипций - `{app="transcriber-vca"} |= "Transcription"`
+- User registrations per minute — регистрации - `count_over_time({app="transcriber-vca"} |= "registered successfully" [1m])`
 
+### Трейсы дашборд
+- Recent Traces - последние трейсы - `{resource.service.name = "transcriber-vca"}`
+- Error Traces - ошибочные трейсы - `{resource.service.name = "transcriber-vca" && status = error}`
+- Auth Traces - трейсы аутентификации - `{span.auth.username != ""}`
+- Slow Requests (>1000ms) — медленные запросы - `{resource.service.name = "transcriber-vca" && duration > 1000ms}`
+- Transcription Traces - трейсы транскрипций - `{span.transcription.id != ""}`
+- Failed Login Traces - неудачные логины - `{span.auth.result = "invalid_password" || span.auth.result = "user_not_found"}`
 
 ### Доступ к сервисам
 
@@ -138,3 +149,4 @@ docker-compose up -d
 | **Grafana** | http://localhost:3000         | Дашборды и логи (логин: `admin` / `admin`) |
 | **Loki** | http://localhost:3100/ready   | Хранилище логов |
 | **VictoriaLogs** | http://localhost:9428         | Альтернативное хранилище логов |
+| **Grafana Tempo** | http://localhost:3200        | Хранилище трейсов |

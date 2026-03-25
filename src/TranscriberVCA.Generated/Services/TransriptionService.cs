@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -14,6 +15,7 @@ namespace TranscriberVCA.Generated.Services;
 /// </summary>
 public class TranscriptionService : ITranscriptionService
 {
+    private static readonly ActivitySource ActivitySource = new("TranscriberVCA.Transcription");
     private readonly Dictionary<string, TranscriptionResult> _transcriptions = new();
     private readonly Dictionary<string, List<string>> _userTranscriptions = new();
     private readonly ILogger<TranscriptionService> _logger;
@@ -35,9 +37,17 @@ public class TranscriptionService : ITranscriptionService
     /// <returns></returns>
     public TranscriptionResult StartTranscription(string userId, TranscribeRequest request)
     {
+        using var activity = ActivitySource.StartActivity("TranscriptionService.Start");
+
         var id = Guid.NewGuid().ToString().Substring(0, 7);
         var model = (TranscriptionResult.ModelEnum)request.Model;
         var format = (TranscriptionResult.FormatEnum)request.Format;
+
+        activity?.SetTag("transcription.id", id);
+        activity?.SetTag("transcription.user_id", userId);
+        activity?.SetTag("transcription.youtube_url", request.YoutubeUrl);
+        activity?.SetTag("transcription.model", model.ToString());
+        activity?.SetTag("transcription.format", format.ToString());
 
         _logger.LogInformation(
             "Transcription {TranscriptionId} started by user {UserId}. URL: {YoutubeUrl}, Model: {Model}, Format: {Format}",
@@ -62,15 +72,37 @@ public class TranscriptionService : ITranscriptionService
         MetricsService.TranscriptionsStarted.WithLabels(model.ToString(), format.ToString()).Inc();
         MetricsService.TranscriptionsInProgress.Inc();
 
+        // Сохраняем trace context для фоновой задачи
+        var parentContext = activity?.Context;
+
         _ = Task.Run(async () =>
         {
+            using var processActivity = ActivitySource.StartActivity(
+                "TranscriptionService.Process",
+                ActivityKind.Internal,
+                parentContext ?? default);
+
+            processActivity?.SetTag("transcription.id", id);
+            processActivity?.SetTag("transcription.model", model.ToString());
+
             var timer = MetricsService.TranscriptionDuration.NewTimer();
             try
             {
-                _logger.LogInformation("Transcription {TranscriptionId} status changed to {Status}",
-                    id, "Transcribing");
-                result.Status = TranscriptionResult.StatusEnum.TranscribingEnum;
-                await Task.Delay(5000);
+                using (var extractActivity = ActivitySource.StartActivity("TranscriptionService.ExtractAudio"))
+                {
+                    extractActivity?.SetTag("transcription.id", id);
+                    result.Status = TranscriptionResult.StatusEnum.TranscribingEnum;
+                    _logger.LogInformation("Transcription {TranscriptionId} status changed to {Status}",
+                        id, "Transcribing");
+                    await Task.Delay(2000);
+                }
+
+                using (var transcribeActivity = ActivitySource.StartActivity("TranscriptionService.Transcribe"))
+                {
+                    transcribeActivity?.SetTag("transcription.id", id);
+                    transcribeActivity?.SetTag("transcription.model", model.ToString());
+                    await Task.Delay(3000);
+                }
 
                 result.Status = TranscriptionResult.StatusEnum.CompletedEnum;
                 if (request.Format.ToString() == "json")
@@ -85,23 +117,22 @@ public class TranscriptionService : ITranscriptionService
                     };
                 }
 
-                _logger.LogInformation(
-                    "Transcription {TranscriptionId} completed successfully. Duration: {Duration}ms",
-                    id, timer.ObserveDuration().TotalMilliseconds);
+                processActivity?.SetTag("transcription.status", "completed");
+                _logger.LogInformation("Transcription {TranscriptionId} completed successfully", id);
 
                 MetricsService.TranscriptionsCompleted.WithLabels(model.ToString(), format.ToString()).Inc();
             }
             catch (Exception ex)
             {
                 result.Status = TranscriptionResult.StatusEnum.ErrorEnum;
-                _logger.LogError(ex,
-                    "Transcription {TranscriptionId} failed with error: {Error}",
-                    id, ex.Message);
+                processActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                processActivity?.SetTag("transcription.status", "error");
+                _logger.LogError(ex, "Transcription {TranscriptionId} failed with error: {Error}", id, ex.Message);
                 MetricsService.TranscriptionsFailed.Inc();
-                timer.ObserveDuration();
             }
             finally
             {
+                timer.ObserveDuration();
                 MetricsService.TranscriptionsInProgress.Dec();
             }
         });
@@ -117,19 +148,29 @@ public class TranscriptionService : ITranscriptionService
     /// <returns></returns>
     public TranscriptionResult? GetTranscription(string userId, string transcriptionId)
     {
+        using var activity = ActivitySource.StartActivity("TranscriptionService.Get");
+        activity?.SetTag("transcription.id", transcriptionId);
+        activity?.SetTag("transcription.user_id", userId);
+
         if (!_transcriptions.TryGetValue(transcriptionId, out var result))
         {
+            activity?.SetTag("transcription.found", false);
             _logger.LogWarning("Transcription {TranscriptionId} not found", transcriptionId);
             return null;
         }
 
         if (!_userTranscriptions.ContainsKey(userId) || !_userTranscriptions[userId].Contains(transcriptionId))
         {
+            activity?.SetTag("transcription.authorized", false);
+            activity?.SetStatus(ActivityStatusCode.Error, "Unauthorized access");
             _logger.LogWarning(
                 "User {UserId} attempted to access transcription {TranscriptionId} without permission",
                 userId, transcriptionId);
             return null;
         }
+
+        activity?.SetTag("transcription.found", true);
+        activity?.SetTag("transcription.status", result.Status.ToString());
 
         _logger.LogDebug("User {UserId} retrieved transcription {TranscriptionId}, status: {Status}",
             userId, transcriptionId, result.Status);
@@ -145,8 +186,14 @@ public class TranscriptionService : ITranscriptionService
     /// <returns></returns>
     public List<HistoryItem> GetHistory(string userId, int limit, int offset)
     {
+        using var activity = ActivitySource.StartActivity("TranscriptionService.GetHistory");
+        activity?.SetTag("transcription.user_id", userId);
+        activity?.SetTag("transcription.limit", limit);
+        activity?.SetTag("transcription.offset", offset);
+
         if (!_userTranscriptions.ContainsKey(userId))
         {
+            activity?.SetTag("transcription.history_count", 0);
             _logger.LogInformation("No history found for user {UserId}", userId);
             return new List<HistoryItem>();
         }
@@ -165,6 +212,8 @@ public class TranscriptionService : ITranscriptionService
                 CreatedAt = t.CreatedAt
             })
             .ToList();
+
+        activity?.SetTag("transcription.history_count", items.Count);
 
         _logger.LogInformation("User {UserId} retrieved history: {Count} items (offset={Offset}, limit={Limit})",
             userId, items.Count, offset, limit);
