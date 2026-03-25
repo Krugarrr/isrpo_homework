@@ -100,4 +100,12 @@ docker-compose up -d
 5. Transcription Duration - среднее время обработки
 6. Logins - успешные и неудачные попытки входа
 
-<img width="962" height="351" alt="image" src="https://github.com/user-attachments/assets/62a19133-c4d4-44ac-855b-799d2e884d89" />
+<img width="685" height="209" alt="image" src="https://github.com/user-attachments/assets/eeb71144-c274-403e-a4a4-b17a616d9572" />
+
+<img width="601" height="427" alt="image" src="https://github.com/user-attachments/assets/f5d8704e-b333-46e8-a824-75c7dd72c723" />
+
+<img width="475" height="147" alt="image" src="https://github.com/user-attachments/assets/a826bd5a-8338-4000-974b-5cd2ebc3a6cf" />
+
+<img width="694" height="477" alt="image" src="https://github.com/user-attachments/assets/f323df54-9b03-406e-b946-e716b7dc59f5" />
+
+
