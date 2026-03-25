@@ -89,6 +89,8 @@ cd src/TranscriberVCA.Generated
 docker-compose up -d
 ```
 
+# Метрики
+
 ### Дашборд метрик
 1. Transcription Rate - график транскрипций во времени - `rate(transcriber_transcriptions_started_total[1m])`
 2. Total Transcriptions - общее количество транскрипций - `sum(transcriber_transcriptions_started_total)`
@@ -97,7 +99,17 @@ docker-compose up -d
 5. Transcription Duration - среднее время обработки - `histogram_quantile(0.95, rate(transcriber_transcription_duration_seconds_bucket[5m]))`
 6. Logins - успешные и неудачные попытки входа - `transcriber_logins_total{status="success"}` и `transcriber_logins_total{status="failureч"}`
 
-### Логирование
+### Preview
+<img width="1064" height="350" alt="image" src="https://github.com/user-attachments/assets/0475e31d-dd3f-44f0-9999-0c588990fdb9" />
+
+### PromQL query details
+<img width="353" height="131" alt="image" src="https://github.com/user-attachments/assets/5902cbf1-483a-4805-86ac-fdc4bb2e1420" />
+
+---
+
+<img width="259" height="176" alt="image" src="https://github.com/user-attachments/assets/2b577c88-0ee6-4cc8-a951-547efed23798" />
+
+# Логирование
 Использую Serilog для логирования. Логи отправляются в консоль и в Grafana Loki
 
 ### Что логируется
@@ -117,12 +129,16 @@ docker-compose up -d
 ### Логирование в консоли
 <img width="1280" height="243" alt="image" src="https://github.com/user-attachments/assets/ec6b0768-6ad8-4910-a4d4-0db1df32c2b0" />
 
-### Датасурс Loki в Graphana
+### Loki as Datasource
 <img width="1280" height="608" alt="image" src="https://github.com/user-attachments/assets/0ae15a15-a3db-490f-aa83-fd8bff8bc5c9" />
 
+### Datasource query details
 <img width="786" height="240" alt="image" src="https://github.com/user-attachments/assets/8b7c8af8-8d58-481e-b332-0bb41b977de3" />
 
+---
+
 <img width="1280" height="654" alt="image" src="https://github.com/user-attachments/assets/563ac7be-85d9-4443-8155-75006ea02758" />
+
 
 ### Дашборд логов
 - Application logs — все логи приложения - `{app="transcriber-vca"}`
@@ -131,6 +147,17 @@ docker-compose up -d
 - Failed logins per minute — мониторинг брутфорса - `count_over_time({app="transcriber-vca"} |= "Login failed" [1m])`
 - Transcription lifecycle — жизненный цикл транскрипций - `{app="transcriber-vca"} |= "Transcription"`
 - User registrations per minute — регистрации - `count_over_time({app="transcriber-vca"} |= "registered successfully" [1m])`
+
+### Preview
+<img width="1069" height="375" alt="image" src="https://github.com/user-attachments/assets/b4afe193-b340-44e4-9eb6-4ac71f446120" />
+
+
+### Query details
+<img width="228" height="153" alt="image" src="https://github.com/user-attachments/assets/b78be3b4-a789-4e22-9ec5-389ef60e6a6f" />
+
+---
+
+<img width="292" height="179" alt="image" src="https://github.com/user-attachments/assets/d21a9fad-3d84-4546-90ed-a87a3edb7fb2" />
 
 ### Доступ к сервисам
 
