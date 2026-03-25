@@ -99,3 +99,5 @@ docker-compose up -d
 4. Completed vs Failed - успешные и неудачные транскрипции
 5. Transcription Duration - среднее время обработки
 6. Logins - успешные и неудачные попытки входа
+
+<img width="962" height="351" alt="image" src="https://github.com/user-attachments/assets/62a19133-c4d4-44ac-855b-799d2e884d89" />
