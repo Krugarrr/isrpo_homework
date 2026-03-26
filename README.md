@@ -132,7 +132,7 @@ docker-compose up -d
 ### Loki as Datasource
 <img width="1280" height="608" alt="image" src="https://github.com/user-attachments/assets/0ae15a15-a3db-490f-aa83-fd8bff8bc5c9" />
 
-### Datasource query details
+### Datasource LogQL query details
 <img width="786" height="240" alt="image" src="https://github.com/user-attachments/assets/8b7c8af8-8d58-481e-b332-0bb41b977de3" />
 
 ---
@@ -152,7 +152,7 @@ docker-compose up -d
 <img width="1069" height="375" alt="image" src="https://github.com/user-attachments/assets/b4afe193-b340-44e4-9eb6-4ac71f446120" />
 
 
-### Query details
+### LogQL query details
 <img width="228" height="153" alt="image" src="https://github.com/user-attachments/assets/b78be3b4-a789-4e22-9ec5-389ef60e6a6f" />
 
 ---
